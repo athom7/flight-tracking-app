@@ -15,8 +15,12 @@ import {
 } from 'lucide-react';
 import { mockFlights } from './utils/mockData';
 import { fetchFlightData, parseFlightNumberFromVoice } from './utils/api';
+import useApiKey from './hooks/useApiKey';
 
 function FlightTracker() {
+  // API Key management with localStorage persistence
+  const { apiKey, setApiKey, clearApiKey } = useApiKey();
+
   // State management
   const [flights, setFlights] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -25,7 +29,6 @@ function FlightTracker() {
   const [draggedItem, setDraggedItem] = useState(null);
   const [expandedFlightId, setExpandedFlightId] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [newFlight, setNewFlight] = useState({
     flightNumber: '',
@@ -293,14 +296,25 @@ function FlightTracker() {
                 <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
                   AviationStack API Key
                 </label>
-                <input
-                  type="password"
-                  id="apiKey"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter your API key"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    id="apiKey"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your API key"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {apiKey && (
+                    <button
+                      onClick={clearApiKey}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
+                      aria-label="Clear API key"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
