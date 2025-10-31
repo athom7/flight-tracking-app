@@ -257,15 +257,19 @@ function FlightTracker() {
 
   // Pull-to-refresh handlers
   const handleTouchStart = (e) => {
-    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
+    const isAtTop = window.scrollY === 0 || (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0);
+    if (isAtTop) {
       setTouchStart(e.touches[0].clientY);
     }
   };
 
   const handleTouchMove = (e) => {
     if (touchStart === 0) return;
-    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop > 0) {
+
+    const scrollTop = window.scrollY || (scrollContainerRef.current ? scrollContainerRef.current.scrollTop : 0);
+    if (scrollTop > 0) {
       setTouchStart(0);
+      setIsPulling(false);
       return;
     }
 
@@ -273,13 +277,15 @@ function FlightTracker() {
     const distance = touchCurrent - touchStart;
 
     if (distance > 0) {
+      // Prevent default browser pull-to-refresh
+      e.preventDefault();
       setIsPulling(true);
       setPullDistance(Math.min(distance, 150));
     }
   };
 
   const handleTouchEnd = async () => {
-    if (pullDistance > 80) {
+    if (pullDistance > 80 && !isRefreshing) {
       setIsRefreshing(true);
       await refreshFlights();
       setIsRefreshing(false);
@@ -322,7 +328,8 @@ function FlightTracker() {
   return (
     <div
       ref={scrollContainerRef}
-      className="min-h-screen bg-gray-100 pb-20 overflow-y-auto"
+      className="min-h-screen bg-gray-100 pb-20"
+      style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -330,23 +337,29 @@ function FlightTracker() {
       {/* Pull-to-refresh indicator */}
       {(isPulling || isRefreshing) && (
         <div
-          className="fixed top-16 left-0 right-0 flex justify-center items-center z-20 transition-all duration-300"
+          className="fixed left-0 right-0 flex flex-col justify-center items-center z-50 pointer-events-none"
           style={{
-            transform: `translateY(${isPulling ? pullDistance * 0.5 : 0}px)`,
-            opacity: pullDistance > 30 ? 1 : pullDistance / 30
+            top: `${Math.max(0, pullDistance * 0.8 - 40)}px`,
+            opacity: isPulling ? Math.min(pullDistance / 50, 1) : 1
           }}
         >
-          <div className="bg-white rounded-full p-4 shadow-lg">
+          <div className="bg-white rounded-full p-4 shadow-xl border-4 border-blue-100">
             <Plane
-              className={`w-8 h-8 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
+              className={`w-10 h-10 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
               style={{
-                transform: isPulling && !isRefreshing ? `rotate(${pullDistance * 2}deg)` : undefined
+                transform: isPulling && !isRefreshing ? `rotate(${pullDistance * 3}deg)` : undefined,
+                transition: isRefreshing ? 'none' : 'transform 0.1s ease-out'
               }}
             />
           </div>
           {pullDistance > 80 && !isRefreshing && (
-            <span className="absolute -bottom-8 text-sm text-gray-600 font-medium">
+            <span className="mt-3 text-sm text-blue-600 font-semibold bg-white px-4 py-1 rounded-full shadow-md">
               Release to refresh
+            </span>
+          )}
+          {isRefreshing && (
+            <span className="mt-3 text-sm text-blue-600 font-semibold bg-white px-4 py-1 rounded-full shadow-md">
+              Refreshing flights...
             </span>
           )}
         </div>
