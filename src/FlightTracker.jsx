@@ -36,7 +36,14 @@ function FlightTracker() {
   });
   const [error, setError] = useState('');
 
+  // Pull-to-refresh state
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
+
   const recognitionRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   // Initialize with mock data
   useEffect(() => {
@@ -248,8 +255,103 @@ function FlightTracker() {
     return actual !== scheduled ? 'text-orange-600' : 'text-green-600';
   };
 
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e) => {
+    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
+      setTouchStart(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStart === 0) return;
+    if (scrollContainerRef.current && scrollContainerRef.current.scrollTop > 0) {
+      setTouchStart(0);
+      return;
+    }
+
+    const touchCurrent = e.touches[0].clientY;
+    const distance = touchCurrent - touchStart;
+
+    if (distance > 0) {
+      setIsPulling(true);
+      setPullDistance(Math.min(distance, 150));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance > 80) {
+      setIsRefreshing(true);
+      await refreshFlights();
+      setIsRefreshing(false);
+    }
+
+    setIsPulling(false);
+    setPullDistance(0);
+    setTouchStart(0);
+  };
+
+  // Refresh flights data
+  const refreshFlights = async () => {
+    // Simulate API refresh delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Refresh all flights with API data if available
+    if (apiKey) {
+      const refreshedFlights = await Promise.all(
+        flights.map(async (flight) => {
+          try {
+            const refreshedData = await fetchFlightData(
+              flight.flightNumber,
+              flight.date,
+              apiKey
+            );
+            return refreshedData || flight;
+          } catch (error) {
+            console.error(`Failed to refresh flight ${flight.flightNumber}:`, error);
+            return flight;
+          }
+        })
+      );
+      setFlights(sortFlights(refreshedFlights));
+    } else {
+      // Just re-sort if no API key
+      setFlights(sortFlights([...flights]));
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
+    <div
+      ref={scrollContainerRef}
+      className="min-h-screen bg-gray-100 pb-20 overflow-y-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {(isPulling || isRefreshing) && (
+        <div
+          className="fixed top-16 left-0 right-0 flex justify-center items-center z-20 transition-all duration-300"
+          style={{
+            transform: `translateY(${isPulling ? pullDistance * 0.5 : 0}px)`,
+            opacity: pullDistance > 30 ? 1 : pullDistance / 30
+          }}
+        >
+          <div className="bg-white rounded-full p-4 shadow-lg">
+            <Plane
+              className={`w-8 h-8 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
+              style={{
+                transform: isPulling && !isRefreshing ? `rotate(${pullDistance * 2}deg)` : undefined
+              }}
+            />
+          </div>
+          {pullDistance > 80 && !isRefreshing && (
+            <span className="absolute -bottom-8 text-sm text-gray-600 font-medium">
+              Release to refresh
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
         <div className="max-w-mobile mx-auto flex items-center justify-between">
