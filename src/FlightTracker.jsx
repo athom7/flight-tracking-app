@@ -86,51 +86,46 @@ function FlightTracker() {
     }
   }, []);
 
-  // Prevent iOS Safari default pull-to-refresh
+  // Prevent iOS Safari default pull-to-refresh with aggressive approach
   useEffect(() => {
-    let startY = 0;
+    let lastTouchY = 0;
+    let preventPullToRefresh = false;
 
     const handleTouchStartGlobal = (e) => {
-      startY = e.touches[0].clientY;
+      if (e.touches.length !== 1) return;
+      lastTouchY = e.touches[0].clientY;
+
+      // Check if we're at the top
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+      preventPullToRefresh = scrollTop === 0;
     };
 
     const handleTouchMoveGlobal = (e) => {
-      const currentY = e.touches[0].clientY;
-      const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+      if (!preventPullToRefresh || e.touches.length !== 1) return;
 
-      // Only prevent default if:
-      // 1. We're at the top of the page (scrollTop === 0)
-      // 2. User is pulling down (currentY > startY)
-      if (scrollTop === 0 && currentY > startY) {
-        // Prevent iOS Safari's default pull-to-refresh
+      const touchY = e.touches[0].clientY;
+      const touchYDelta = touchY - lastTouchY;
+
+      // If pulling down (positive delta), prevent default
+      if (touchYDelta > 0) {
         e.preventDefault();
+        e.stopPropagation();
       }
     };
 
+    const handleTouchEndGlobal = () => {
+      preventPullToRefresh = false;
+    };
+
     // Add event listeners with passive: false to allow preventDefault
-    document.addEventListener('touchstart', handleTouchStartGlobal, { passive: false });
-    document.addEventListener('touchmove', handleTouchMoveGlobal, { passive: false });
-
-    // Prevent overscroll bounce on iOS
-    document.body.style.overscrollBehavior = 'none';
-    document.documentElement.style.overscrollBehavior = 'none';
-
-    // Add CSS to prevent iOS Safari pull-to-refresh
-    const style = document.createElement('style');
-    style.textContent = `
-      body {
-        overscroll-behavior-y: contain;
-        -webkit-overflow-scrolling: touch;
-      }
-    `;
-    document.head.appendChild(style);
+    document.addEventListener('touchstart', handleTouchStartGlobal, { passive: false, capture: true });
+    document.addEventListener('touchmove', handleTouchMoveGlobal, { passive: false, capture: true });
+    document.addEventListener('touchend', handleTouchEndGlobal, { passive: true, capture: true });
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStartGlobal);
-      document.removeEventListener('touchmove', handleTouchMoveGlobal);
-      document.body.style.overscrollBehavior = '';
-      document.documentElement.style.overscrollBehavior = '';
-      document.head.removeChild(style);
+      document.removeEventListener('touchstart', handleTouchStartGlobal, { capture: true });
+      document.removeEventListener('touchmove', handleTouchMoveGlobal, { capture: true });
+      document.removeEventListener('touchend', handleTouchEndGlobal, { capture: true });
     };
   }, []);
 
@@ -383,30 +378,32 @@ function FlightTracker() {
       {/* Pull-to-refresh indicator */}
       {(isPulling || isRefreshing) && (
         <div
-          className="fixed left-0 right-0 flex flex-col justify-center items-center z-50 pointer-events-none"
+          className="fixed left-0 right-0 flex flex-col justify-center items-center pointer-events-none"
           style={{
-            top: `${Math.max(0, pullDistance * 0.8 - 40)}px`,
-            opacity: isPulling ? Math.min(pullDistance / 50, 1) : 1
+            top: `${Math.max(20, pullDistance * 0.6)}px`,
+            opacity: isPulling ? Math.min(pullDistance / 40, 1) : 1,
+            zIndex: 9999
           }}
         >
-          <div className="bg-white rounded-full p-4 shadow-xl border-4 border-blue-100">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-full p-6 shadow-2xl border-4 border-white">
             <Plane
-              className={`w-10 h-10 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`}
+              className={`w-12 h-12 text-white ${isRefreshing ? 'animate-spin' : ''}`}
               style={{
                 transform: isPulling && !isRefreshing ? `rotate(${pullDistance * 3}deg)` : undefined,
-                transition: isRefreshing ? 'none' : 'transform 0.1s ease-out'
+                transition: isRefreshing ? 'none' : 'transform 0.1s ease-out',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
               }}
             />
           </div>
           {pullDistance > 80 && !isRefreshing && (
-            <span className="mt-3 text-sm text-blue-600 font-semibold bg-white px-4 py-1 rounded-full shadow-md">
-              Release to refresh
-            </span>
+            <div className="mt-4 text-base text-white font-bold bg-blue-600 px-6 py-2 rounded-full shadow-xl">
+              Release to refresh ✈️
+            </div>
           )}
           {isRefreshing && (
-            <span className="mt-3 text-sm text-blue-600 font-semibold bg-white px-4 py-1 rounded-full shadow-md">
-              Refreshing flights...
-            </span>
+            <div className="mt-4 text-base text-white font-bold bg-blue-600 px-6 py-2 rounded-full shadow-xl animate-pulse">
+              Refreshing flights... ✈️
+            </div>
           )}
         </div>
       )}
