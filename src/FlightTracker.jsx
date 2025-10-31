@@ -86,6 +86,54 @@ function FlightTracker() {
     }
   }, []);
 
+  // Prevent iOS Safari default pull-to-refresh
+  useEffect(() => {
+    let startY = 0;
+
+    const handleTouchStartGlobal = (e) => {
+      startY = e.touches[0].clientY;
+    };
+
+    const handleTouchMoveGlobal = (e) => {
+      const currentY = e.touches[0].clientY;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+
+      // Only prevent default if:
+      // 1. We're at the top of the page (scrollTop === 0)
+      // 2. User is pulling down (currentY > startY)
+      if (scrollTop === 0 && currentY > startY) {
+        // Prevent iOS Safari's default pull-to-refresh
+        e.preventDefault();
+      }
+    };
+
+    // Add event listeners with passive: false to allow preventDefault
+    document.addEventListener('touchstart', handleTouchStartGlobal, { passive: false });
+    document.addEventListener('touchmove', handleTouchMoveGlobal, { passive: false });
+
+    // Prevent overscroll bounce on iOS
+    document.body.style.overscrollBehavior = 'none';
+    document.documentElement.style.overscrollBehavior = 'none';
+
+    // Add CSS to prevent iOS Safari pull-to-refresh
+    const style = document.createElement('style');
+    style.textContent = `
+      body {
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStartGlobal);
+      document.removeEventListener('touchmove', handleTouchMoveGlobal);
+      document.body.style.overscrollBehavior = '';
+      document.documentElement.style.overscrollBehavior = '';
+      document.head.removeChild(style);
+    };
+  }, []);
+
   // Auto-sort flights by departure date and time
   const sortFlights = (flightList) => {
     return [...flightList].sort((a, b) => {
@@ -277,8 +325,7 @@ function FlightTracker() {
     const distance = touchCurrent - touchStart;
 
     if (distance > 0) {
-      // Prevent default browser pull-to-refresh
-      e.preventDefault();
+      // Browser default is prevented by global handler
       setIsPulling(true);
       setPullDistance(Math.min(distance, 150));
     }
@@ -329,7 +376,6 @@ function FlightTracker() {
     <div
       ref={scrollContainerRef}
       className="min-h-screen bg-gray-100 pb-20"
-      style={{ overscrollBehavior: 'none', touchAction: 'pan-y' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
