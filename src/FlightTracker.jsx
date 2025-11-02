@@ -16,6 +16,10 @@ import {
 import { mockFlights } from './utils/mockData';
 import { fetchFlightData, parseFlightNumberFromVoice } from './utils/api';
 import useApiKey from './hooks/useApiKey';
+import { hasFlightPassed, filterArchivableFlights } from './utils/flightTimeUtils';
+
+// LocalStorage key for flight data
+const FLIGHTS_STORAGE_KEY = 'flightTracker_flights';
 
 function FlightTracker() {
   // API Key management with localStorage persistence
@@ -38,10 +42,49 @@ function FlightTracker() {
 
   const recognitionRef = useRef(null);
 
-  // Initialize with mock data
+  // Initialize flights: load from localStorage and perform automatic cleanup
   useEffect(() => {
-    setFlights([...mockFlights]);
+    try {
+      const storedFlights = localStorage.getItem(FLIGHTS_STORAGE_KEY);
+
+      if (storedFlights) {
+        const parsedFlights = JSON.parse(storedFlights);
+        // Automatically remove flights older than 3 days
+        const cleanedFlights = filterArchivableFlights(parsedFlights);
+
+        // Save cleaned flights back to localStorage
+        localStorage.setItem(FLIGHTS_STORAGE_KEY, JSON.stringify(cleanedFlights));
+        setFlights(cleanedFlights);
+
+        // Log cleanup results
+        const removedCount = parsedFlights.length - cleanedFlights.length;
+        if (removedCount > 0) {
+          console.log(`Automatically archived ${removedCount} flight(s) older than 3 days`);
+        }
+      } else {
+        // First time loading, use mock data
+        const cleanedMockFlights = filterArchivableFlights([...mockFlights]);
+        setFlights(cleanedMockFlights);
+        localStorage.setItem(FLIGHTS_STORAGE_KEY, JSON.stringify(cleanedMockFlights));
+      }
+    } catch (error) {
+      console.error('Error loading flights from localStorage:', error);
+      // Fallback to mock data on error
+      const cleanedMockFlights = filterArchivableFlights([...mockFlights]);
+      setFlights(cleanedMockFlights);
+    }
   }, []);
+
+  // Save flights to localStorage whenever they change
+  useEffect(() => {
+    if (flights.length > 0 || localStorage.getItem(FLIGHTS_STORAGE_KEY)) {
+      try {
+        localStorage.setItem(FLIGHTS_STORAGE_KEY, JSON.stringify(flights));
+      } catch (error) {
+        console.error('Error saving flights to localStorage:', error);
+      }
+    }
+  }, [flights]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -248,6 +291,12 @@ function FlightTracker() {
     return actual !== scheduled ? 'text-orange-600' : 'text-green-600';
   };
 
+  // Check if a flight should be grayed out (has passed)
+  const isFlightPast = (flight) => {
+    const departureTime = flight.departure?.time || '00:00';
+    return hasFlightPassed(flight.date, departureTime);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 pb-20">
       {/* Header */}
@@ -433,16 +482,20 @@ function FlightTracker() {
             <p className="text-sm mt-2">Tap the + button to add your first flight</p>
           </div>
         ) : (
-          flights.map((flight, index) => (
-            <div
-              key={flight.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragEnd={handleDragEnd}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, index)}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md"
-            >
+          flights.map((flight, index) => {
+            const isPast = isFlightPast(flight);
+            return (
+              <div
+                key={flight.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, index)}
+                className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md ${
+                  isPast ? 'opacity-50' : ''
+                }`}
+              >
               {/* Flight Card Header */}
               <div
                 onClick={() => toggleFlightExpansion(flight.id)}
@@ -651,7 +704,8 @@ function FlightTracker() {
                 </div>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
