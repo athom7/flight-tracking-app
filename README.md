@@ -98,6 +98,8 @@ flight-tracking-app/
 ├── public/
 │   └── manifest.json          # PWA manifest
 ├── src/
+│   ├── hooks/
+│   │   └── useApiKey.js      # API key management with localStorage
 │   ├── utils/
 │   │   ├── api.js            # AviationStack API integration
 │   │   └── mockData.js       # Sample flight data
@@ -168,8 +170,8 @@ For production use, consider implementing a backend proxy to:
 ## Security Considerations
 
 **Current Implementation:**
-- API key stored in component state (memory only)
-- Not persisted (no localStorage in this version)
+- API key stored in localStorage for persistence
+- Managed through custom useApiKey hook with automatic save/load
 - Never committed to version control
 
 **Production Recommendations:**
@@ -181,7 +183,7 @@ For production use, consider implementing a backend proxy to:
 ## Future Enhancements
 
 ### v1.1
-- [ ] localStorage support for persistent state
+- [x] localStorage support for persistent state (API key persistence implemented)
 - [ ] Individual flight refresh
 - [ ] Better error messages
 - [ ] Loading skeletons
