@@ -232,42 +232,42 @@ function FlightTracker() {
     switch (status.toLowerCase()) {
       case 'on time':
       case 'boarding':
-        return 'text-green-600 bg-green-50';
+        return 'text-emerald-700 bg-emerald-50 border border-emerald-200';
       case 'delayed':
-        return 'text-orange-600 bg-orange-50';
+        return 'text-amber-700 bg-amber-50 border border-amber-200';
       case 'cancelled':
-        return 'text-red-600 bg-red-50';
+        return 'text-red-700 bg-red-50 border border-red-200';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-stone-700 bg-stone-100 border border-stone-200';
     }
   };
 
   // Get time color (compare actual vs scheduled)
   const getTimeColor = (actual, scheduled) => {
-    if (!actual || !scheduled) return 'text-gray-900';
-    return actual !== scheduled ? 'text-orange-600' : 'text-green-600';
+    if (!actual || !scheduled) return 'text-stone-900';
+    return actual !== scheduled ? 'text-amber-700' : 'text-emerald-700';
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
+    <div className="min-h-screen bg-stone-50 pb-20">
       {/* Header */}
-      <header className="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-md">
+      <header className="bg-white border-b border-stone-200 p-5 sticky top-0 z-10 shadow-sm backdrop-blur-sm bg-white/95">
         <div className="max-w-mobile mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Plane className="w-6 h-6" />
-            <h1 className="text-xl font-bold">Flight Tracker</h1>
+          <div className="flex items-center gap-3">
+            <Plane className="w-6 h-6 text-amber-600" />
+            <h1 className="text-xl font-semibold text-stone-900 tracking-tight">Flight Tracker</h1>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-stone-100 rounded-lg transition-all text-stone-600 hover:text-stone-900"
               aria-label="Settings"
             >
               <Settings className="w-5 h-5" />
             </button>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+              className="p-2 bg-amber-500 hover:bg-amber-600 rounded-lg transition-all text-white shadow-sm"
               aria-label="Add flight"
             >
               <Plus className="w-5 h-5" />
@@ -278,22 +278,22 @@ function FlightTracker() {
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="bg-white border-b shadow-sm">
-          <div className="max-w-mobile mx-auto p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Settings</h2>
+        <div className="bg-white border-b border-stone-200">
+          <div className="max-w-mobile mx-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-stone-900">Settings</h2>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors text-stone-500"
                 aria-label="Close settings"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="apiKey" className="block text-sm font-medium text-stone-700 mb-2">
                   AviationStack API Key
                 </label>
                 <div className="flex gap-2">
@@ -303,12 +303,12 @@ function FlightTracker() {
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder="Enter your API key"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none bg-white"
                   />
                   {apiKey && (
                     <button
                       onClick={clearApiKey}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
+                      className="px-4 py-2.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm border border-red-200"
                       aria-label="Clear API key"
                     >
                       Clear
@@ -317,9 +317,9 @@ function FlightTracker() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-sm">
-                <div className={`w-3 h-3 rounded-full ${apiKey ? 'bg-green-500' : 'bg-gray-400'}`} />
-                <span className="text-gray-600">
+              <div className="flex items-center gap-2.5 text-sm bg-stone-50 px-4 py-3 rounded-lg border border-stone-200">
+                <div className={`w-2 h-2 rounded-full ${apiKey ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                <span className="text-stone-700 font-medium">
                   {apiKey ? 'Using live data' : 'Using mock data'}
                 </span>
               </div>
@@ -330,17 +330,17 @@ function FlightTracker() {
 
       {/* Add Flight Form */}
       {showAddForm && (
-        <div className="bg-white border-b shadow-sm">
-          <div className="max-w-mobile mx-auto p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Add Flight</h2>
+        <div className="bg-white border-b border-stone-200">
+          <div className="max-w-mobile mx-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-stone-900">Add Flight</h2>
               <button
                 onClick={() => {
                   setShowAddForm(false);
                   setError('');
                   setVoiceTranscript('');
                 }}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors text-stone-500"
                 aria-label="Close form"
               >
                 <X className="w-5 h-5" />
@@ -348,15 +348,15 @@ function FlightTracker() {
             </div>
 
             {error && (
-              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="text-sm text-red-800 leading-relaxed">{error}</p>
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label htmlFor="flightNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="flightNumber" className="block text-sm font-medium text-stone-700 mb-2">
                   Flight Number
                 </label>
                 <div className="flex gap-2">
@@ -366,28 +366,28 @@ function FlightTracker() {
                     value={newFlight.flightNumber}
                     onChange={(e) => setNewFlight({ ...newFlight, flightNumber: e.target.value })}
                     placeholder="e.g., KL692"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none bg-white"
                   />
                   <button
                     onClick={handleVoiceInput}
                     disabled={!recognitionRef.current}
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={`p-2.5 rounded-lg transition-all shadow-sm ${
                       isListening
-                        ? 'bg-red-500 text-white'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                    } disabled:bg-gray-300 disabled:cursor-not-allowed`}
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                    } disabled:bg-stone-200 disabled:cursor-not-allowed disabled:text-stone-400`}
                     aria-label="Voice input"
                   >
                     <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
                   </button>
                 </div>
                 {voiceTranscript && (
-                  <p className="mt-1 text-xs text-gray-500">Heard: "{voiceTranscript}"</p>
+                  <p className="mt-2 text-xs text-stone-600 bg-stone-50 px-3 py-2 rounded border border-stone-200">Heard: "{voiceTranscript}"</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="date" className="block text-sm font-medium text-stone-700 mb-2">
                   Date
                 </label>
                 <input
@@ -395,15 +395,15 @@ function FlightTracker() {
                   id="date"
                   value={newFlight.date}
                   onChange={(e) => setNewFlight({ ...newFlight, date: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none bg-white"
                 />
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   onClick={handleAddFlight}
                   disabled={isLoading}
-                  className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+                  className="flex-1 bg-amber-500 text-white py-2.5 rounded-lg hover:bg-amber-600 transition-all disabled:bg-stone-200 disabled:cursor-not-allowed disabled:text-stone-400 font-medium shadow-sm"
                 >
                   {isLoading ? 'Adding...' : 'Add Flight'}
                 </button>
@@ -414,7 +414,7 @@ function FlightTracker() {
                     setError('');
                     setVoiceTranscript('');
                   }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  className="flex-1 bg-stone-100 text-stone-700 py-2.5 rounded-lg hover:bg-stone-200 transition-all font-medium border border-stone-200"
                 >
                   Cancel
                 </button>
@@ -425,12 +425,14 @@ function FlightTracker() {
       )}
 
       {/* Flight List */}
-      <div className="max-w-mobile mx-auto p-4 space-y-3">
+      <div className="max-w-mobile mx-auto p-5 space-y-3">
         {flights.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <Plane className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p>No flights added yet</p>
-            <p className="text-sm mt-2">Tap the + button to add your first flight</p>
+          <div className="text-center py-16 text-stone-500">
+            <div className="bg-stone-100 w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center">
+              <Plane className="w-10 h-10 text-stone-400" />
+            </div>
+            <p className="text-stone-900 font-medium text-lg mb-1">No flights added yet</p>
+            <p className="text-sm mt-2 text-stone-600">Tap the + button to add your first flight</p>
           </div>
         ) : (
           flights.map((flight, index) => (
@@ -441,41 +443,41 @@ function FlightTracker() {
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, index)}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md"
+              className="bg-white rounded-xl border border-stone-200 overflow-hidden transition-all hover:shadow-lg hover:border-stone-300 shadow-sm"
             >
               {/* Flight Card Header */}
               <div
                 onClick={() => toggleFlightExpansion(flight.id)}
-                className="p-4 cursor-pointer select-none"
+                className="p-5 cursor-pointer select-none"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 pt-1">
-                    <GripVertical className="w-5 h-5 text-gray-400 cursor-grab active:cursor-grabbing" />
+                    <GripVertical className="w-5 h-5 text-stone-400 cursor-grab active:cursor-grabbing hover:text-stone-600" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     {/* Flight number and airline */}
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <h3 className="font-bold text-lg">{flight.flightNumber}</h3>
-                        <p className="text-sm text-gray-600">{flight.airline}</p>
+                        <h3 className="font-semibold text-lg text-stone-900 tracking-tight">{flight.flightNumber}</h3>
+                        <p className="text-sm text-stone-600 mt-0.5">{flight.airline}</p>
                       </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteFlight(flight.id);
                         }}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500"
+                        className="p-2 hover:bg-red-50 rounded-lg transition-colors text-stone-400 hover:text-red-600"
                         aria-label="Delete flight"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4.5 h-4.5" />
                       </button>
                     </div>
 
                     {/* Date */}
-                    <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
-                      <Clock className="w-4 h-4" />
-                      <span>{new Date(flight.date).toLocaleDateString('en-US', {
+                    <div className="flex items-center gap-1.5 text-sm text-stone-600 mb-4 bg-stone-50 px-3 py-1.5 rounded-lg inline-flex border border-stone-200">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="font-medium">{new Date(flight.date).toLocaleDateString('en-US', {
                         weekday: 'short',
                         year: 'numeric',
                         month: 'short',
@@ -484,50 +486,52 @@ function FlightTracker() {
                     </div>
 
                     {/* Route visualization */}
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-3 mb-4">
                       <div className="flex-1 text-left">
-                        <p className="font-semibold text-gray-900">{flight.departure.city}</p>
-                        <p className="text-sm text-gray-500">{flight.departure.airport}</p>
+                        <p className="font-semibold text-stone-900 text-base">{flight.departure.city}</p>
+                        <p className="text-xs text-stone-500 mt-1">{flight.departure.airport}</p>
                       </div>
-                      <Plane className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                      <div className="px-3">
+                        <Plane className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                      </div>
                       <div className="flex-1 text-right">
-                        <p className="font-semibold text-gray-900">{flight.arrival.city}</p>
-                        <p className="text-sm text-gray-500">{flight.arrival.airport}</p>
+                        <p className="font-semibold text-stone-900 text-base">{flight.arrival.city}</p>
+                        <p className="text-xs text-stone-500 mt-1">{flight.arrival.airport}</p>
                       </div>
                     </div>
 
                     {/* Times and gates */}
-                    <div className="flex justify-between text-sm mb-3">
+                    <div className="flex justify-between text-sm mb-4 pb-4 border-b border-stone-100">
                       <div>
-                        <p className="text-gray-500">Departure</p>
-                        <p className={`font-semibold ${getTimeColor(flight.departure.actualTime, flight.departure.time)}`}>
+                        <p className="text-stone-500 text-xs uppercase tracking-wide mb-1.5">Departure</p>
+                        <p className={`font-semibold text-base ${getTimeColor(flight.departure.actualTime, flight.departure.time)}`}>
                           {flight.departure.actualTime || flight.departure.time}
                         </p>
                         {flight.departure.gate && (
-                          <p className="text-gray-500">Gate {flight.departure.gate}</p>
+                          <p className="text-stone-500 text-xs mt-1">Gate {flight.departure.gate}</p>
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-gray-500">Arrival</p>
-                        <p className={`font-semibold ${getTimeColor(flight.arrival.actualTime, flight.arrival.time)}`}>
+                        <p className="text-stone-500 text-xs uppercase tracking-wide mb-1.5">Arrival</p>
+                        <p className={`font-semibold text-base ${getTimeColor(flight.arrival.actualTime, flight.arrival.time)}`}>
                           {flight.arrival.actualTime || flight.arrival.time}
                         </p>
                         {flight.arrival.gate && (
-                          <p className="text-gray-500">Gate {flight.arrival.gate}</p>
+                          <p className="text-stone-500 text-xs mt-1">Gate {flight.arrival.gate}</p>
                         )}
                       </div>
                     </div>
 
                     {/* Status badge */}
                     <div className="flex items-center justify-between">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(flight.status)}`}>
+                      <span className={`px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide ${getStatusColor(flight.status)}`}>
                         {flight.status}
                         {flight.delay && ` (${flight.delay})`}
                       </span>
                       {expandedFlightId === flight.id ? (
-                        <ChevronUp className="w-5 h-5 text-gray-400" />
+                        <ChevronUp className="w-5 h-5 text-stone-400" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                        <ChevronDown className="w-5 h-5 text-stone-400" />
                       )}
                     </div>
                   </div>
@@ -536,89 +540,89 @@ function FlightTracker() {
 
               {/* Expanded Details */}
               {expandedFlightId === flight.id && (
-                <div className="border-t border-gray-200 bg-gray-50 p-4">
+                <div className="border-t border-stone-200 bg-stone-50 p-5">
                   {/* Current Status */}
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Current Status</h4>
-                    <p className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(flight.currentStatus)}`}>
+                  <div className="mb-5">
+                    <h4 className="font-semibold text-stone-900 mb-3 text-sm uppercase tracking-wide">Current Status</h4>
+                    <p className={`inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide ${getStatusColor(flight.currentStatus)}`}>
                       {flight.currentStatus}
                     </p>
                     {flight.reason && (
-                      <p className="text-sm text-gray-600 mt-2">{flight.reason}</p>
+                      <p className="text-sm text-stone-600 mt-3 leading-relaxed bg-white px-4 py-3 rounded-lg border border-stone-200">{flight.reason}</p>
                     )}
                   </div>
 
                   {/* Departure Details */}
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
+                  <div className="mb-5 bg-white p-4 rounded-lg border border-stone-200">
+                    <h4 className="font-semibold text-stone-900 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
+                      <MapPin className="w-4 h-4 text-amber-600" />
                       Departure Details
                     </h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
                       {flight.departure.terminal && (
                         <div>
-                          <span className="text-gray-500">Terminal:</span>
-                          <span className="ml-1 font-medium">{flight.departure.terminal}</span>
+                          <span className="text-stone-500 text-xs">Terminal</span>
+                          <p className="font-medium text-stone-900 mt-0.5">{flight.departure.terminal}</p>
                         </div>
                       )}
                       <div>
-                        <span className="text-gray-500">Scheduled:</span>
-                        <span className="ml-1 font-medium">{flight.departure.time}</span>
+                        <span className="text-stone-500 text-xs">Scheduled</span>
+                        <p className="font-medium text-stone-900 mt-0.5">{flight.departure.time}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Actual:</span>
-                        <span className={`ml-1 font-medium ${getTimeColor(flight.departure.actualTime, flight.departure.time)}`}>
+                        <span className="text-stone-500 text-xs">Actual</span>
+                        <p className={`font-medium mt-0.5 ${getTimeColor(flight.departure.actualTime, flight.departure.time)}`}>
                           {flight.departure.actualTime}
-                        </span>
+                        </p>
                       </div>
                       {flight.departure.gate && (
                         <div>
-                          <span className="text-gray-500">Gate:</span>
-                          <span className="ml-1 font-medium">{flight.departure.gate}</span>
+                          <span className="text-stone-500 text-xs">Gate</span>
+                          <p className="font-medium text-stone-900 mt-0.5">{flight.departure.gate}</p>
                         </div>
                       )}
                       {flight.departure.checkInCounter && (
                         <div className="col-span-2">
-                          <span className="text-gray-500">Check-in:</span>
-                          <span className="ml-1 font-medium">{flight.departure.checkInCounter}</span>
+                          <span className="text-stone-500 text-xs">Check-in</span>
+                          <p className="font-medium text-stone-900 mt-0.5">{flight.departure.checkInCounter}</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Arrival Details */}
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
+                  <div className="mb-5 bg-white p-4 rounded-lg border border-stone-200">
+                    <h4 className="font-semibold text-stone-900 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
+                      <MapPin className="w-4 h-4 text-amber-600" />
                       Arrival Details
                     </h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
                       {flight.arrival.terminal && (
                         <div>
-                          <span className="text-gray-500">Terminal:</span>
-                          <span className="ml-1 font-medium">{flight.arrival.terminal}</span>
+                          <span className="text-stone-500 text-xs">Terminal</span>
+                          <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.terminal}</p>
                         </div>
                       )}
                       <div>
-                        <span className="text-gray-500">Scheduled:</span>
-                        <span className="ml-1 font-medium">{flight.arrival.time}</span>
+                        <span className="text-stone-500 text-xs">Scheduled</span>
+                        <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.time}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Actual:</span>
-                        <span className={`ml-1 font-medium ${getTimeColor(flight.arrival.actualTime, flight.arrival.time)}`}>
+                        <span className="text-stone-500 text-xs">Actual</span>
+                        <p className={`font-medium mt-0.5 ${getTimeColor(flight.arrival.actualTime, flight.arrival.time)}`}>
                           {flight.arrival.actualTime}
-                        </span>
+                        </p>
                       </div>
                       {flight.arrival.gate && (
                         <div>
-                          <span className="text-gray-500">Gate:</span>
-                          <span className="ml-1 font-medium">{flight.arrival.gate}</span>
+                          <span className="text-stone-500 text-xs">Gate</span>
+                          <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.gate}</p>
                         </div>
                       )}
                       {flight.arrival.baggageClaim && (
                         <div className="col-span-2">
-                          <span className="text-gray-500">Baggage:</span>
-                          <span className="ml-1 font-medium">{flight.arrival.baggageClaim}</span>
+                          <span className="text-stone-500 text-xs">Baggage</span>
+                          <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.baggageClaim}</p>
                         </div>
                       )}
                     </div>
@@ -626,23 +630,23 @@ function FlightTracker() {
 
                   {/* Aircraft */}
                   {flight.aircraft && (
-                    <div className="mb-4">
-                      <h4 className="font-semibold text-gray-900 mb-1">Aircraft</h4>
-                      <p className="text-sm text-gray-600">{flight.aircraft}</p>
+                    <div className="mb-5 bg-white p-4 rounded-lg border border-stone-200">
+                      <h4 className="font-semibold text-stone-900 mb-2 text-sm uppercase tracking-wide">Aircraft</h4>
+                      <p className="text-sm text-stone-600">{flight.aircraft}</p>
                     </div>
                   )}
 
                   {/* Gate Changes */}
                   {flight.gateChanges && flight.gateChanges.length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Gate Changes</h4>
-                      <div className="space-y-1">
+                      <h4 className="font-semibold text-stone-900 mb-3 text-sm uppercase tracking-wide">Gate Changes</h4>
+                      <div className="space-y-2">
                         {flight.gateChanges.map((change, idx) => (
-                          <div key={idx} className="text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
-                            <span className="font-medium">
+                          <div key={idx} className="text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
+                            <span className="font-semibold text-amber-900">
                               {change.from} → {change.to}
                             </span>
-                            <span className="text-gray-500 ml-2">at {change.time}</span>
+                            <span className="text-amber-700 ml-2">at {change.time}</span>
                           </div>
                         ))}
                       </div>
