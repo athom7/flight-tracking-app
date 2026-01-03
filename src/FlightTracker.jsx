@@ -38,9 +38,17 @@ function FlightTracker() {
 
   const recognitionRef = useRef(null);
 
-  // Initialize with mock data
+  // Initialize with mock data, filtering out past flights
   useEffect(() => {
-    setFlights([...mockFlights]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day for comparison
+
+    const upToDateFlights = mockFlights.filter(flight => {
+      const flightDate = new Date(flight.date);
+      return flightDate >= today;
+    });
+
+    setFlights([...upToDateFlights]);
   }, []);
 
   // Initialize speech recognition
@@ -193,6 +201,19 @@ function FlightTracker() {
     setFlights(flights.filter(f => f.id !== id));
   };
 
+  // Clear past flights
+  const handleClearPastFlights = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upToDateFlights = flights.filter(flight => {
+      const flightDate = new Date(flight.date);
+      return flightDate >= today;
+    });
+
+    setFlights(upToDateFlights);
+  };
+
   // Toggle flight expansion
   const toggleFlightExpansion = (id) => {
     setExpandedFlightId(expandedFlightId === id ? null : id);
@@ -322,6 +343,17 @@ function FlightTracker() {
                 <span className="text-stone-700 font-medium">
                   {apiKey ? 'Using live data' : 'Using mock data'}
                 </span>
+              </div>
+
+              {/* Clear Past Flights */}
+              <div className="pt-2 border-t border-stone-200">
+                <button
+                  onClick={handleClearPastFlights}
+                  className="w-full px-4 py-2.5 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition-all font-medium border border-stone-200 text-sm"
+                >
+                  Clear Past Flights
+                </button>
+                <p className="text-xs text-stone-500 mt-2">Remove flights with dates before today</p>
               </div>
             </div>
           </div>

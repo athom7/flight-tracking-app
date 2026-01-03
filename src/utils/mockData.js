@@ -2,7 +2,7 @@
 export const mockFlights = [
   {
     id: 1730000001,
-    date: '2025-10-26',
+    date: '2026-01-15',
     airline: 'KLM Royal Dutch Airlines',
     flightNumber: 'KL692',
     departure: {
@@ -32,7 +32,7 @@ export const mockFlights = [
   },
   {
     id: 1730000002,
-    date: '2025-10-27',
+    date: '2026-01-16',
     airline: 'KLM Royal Dutch Airlines',
     flightNumber: 'KL693',
     departure: {
@@ -62,7 +62,7 @@ export const mockFlights = [
   },
   {
     id: 1730000003,
-    date: '2025-10-26',
+    date: '2026-01-15',
     airline: 'Scandinavian Airlines',
     flightNumber: 'SK1234',
     departure: {
@@ -98,7 +98,7 @@ export const mockFlights = [
   },
   {
     id: 1730000004,
-    date: '2025-10-27',
+    date: '2026-01-16',
     airline: 'Scandinavian Airlines',
     flightNumber: 'SK1235',
     departure: {
@@ -128,7 +128,7 @@ export const mockFlights = [
   },
   {
     id: 1730000005,
-    date: '2025-10-26',
+    date: '2026-01-20',
     airline: 'Air Canada',
     flightNumber: 'AC856',
     departure: {
@@ -158,7 +158,7 @@ export const mockFlights = [
   },
   {
     id: 1730000006,
-    date: '2025-10-26',
+    date: '2026-01-22',
     airline: 'Lufthansa',
     flightNumber: 'LH456',
     departure: {
@@ -188,7 +188,7 @@ export const mockFlights = [
   },
   {
     id: 1730000007,
-    date: '2025-10-26',
+    date: '2026-01-25',
     airline: 'British Airways',
     flightNumber: 'BA902',
     departure: {
