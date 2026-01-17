@@ -9,42 +9,369 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fafaf9;
-  color: #1c1917;
+  background-color: #f5f0e6;
+  color: #1a2744;
 }
 
 #root {
   min-height: 100vh;
 }
 
+/* Paper texture overlay for cards */
+.paper-texture {
+  position: relative;
+  background-color: #f8f6f0;
+}
+
+.paper-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Boarding pass notch cutouts */
+.ticket-notch {
+  position: relative;
+}
+
+.ticket-notch::before,
+.ticket-notch::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #f5f0e6;
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.ticket-notch::before {
+  left: -10px;
+}
+
+.ticket-notch::after {
+  right: -10px;
+}
+
+/* Perforated tear line */
+.perforation {
+  position: relative;
+}
+
+.perforation::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    #a08060 0,
+    #a08060 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.perforation-top::before {
+  top: 0;
+}
+
+.perforation-bottom::before {
+  bottom: 0;
+}
+
+/* Split-flap character styling */
+.flap-char {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 50%, #2d2d2d 50%, #252525 100%);
+  color: #e6a919;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 500;
+  padding: 0.25rem 0.35rem;
+  border-radius: 3px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 -1px 0 rgba(0,0,0,0.3),
+    0 2px 4px rgba(0,0,0,0.3);
+  border: 1px solid #3d3d3d;
+  min-width: 1.5rem;
+  text-align: center;
+  position: relative;
+}
+
+.flap-char::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.4);
+  transform: translateY(-0.5px);
+}
+
+.flap-char-large {
+  padding: 0.5rem 0.5rem;
+  min-width: 2rem;
+  font-size: 1.5rem;
+}
+
+.flap-group {
+  display: inline-flex;
+  gap: 2px;
+}
+
+/* Status stamp effects */
+.stamp {
+  position: relative;
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  font-family: 'Special Elite', cursive;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 3px solid currentColor;
+  border-radius: 4px;
+  transform: rotate(-2deg);
+  box-shadow:
+    inset 0 0 0 1px currentColor,
+    2px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.stamp::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: inherit;
+  opacity: 0.15;
+  border-radius: inherit;
+}
+
+.stamp-ontime {
+  color: #2d6a4f;
+  background-color: rgba(45, 106, 79, 0.1);
+}
+
+.stamp-delayed {
+  color: #b45309;
+  background-color: rgba(180, 83, 9, 0.1);
+  transform: rotate(1deg);
+}
+
+.stamp-cancelled {
+  color: #c23b22;
+  background-color: rgba(194, 59, 34, 0.1);
+  transform: rotate(-1deg);
+}
+
+.stamp-boarding {
+  color: #0369a1;
+  background-color: rgba(3, 105, 161, 0.1);
+  transform: rotate(2deg);
+}
+
+/* Barcode styling */
+.barcode {
+  display: flex;
+  gap: 1px;
+  padding: 0.5rem;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.barcode-line {
+  height: 2rem;
+  background-color: #1a2744;
+}
+
+/* Vintage input styling */
+.vintage-input {
+  background-color: #fdfcf9;
+  border: 2px solid #d4c9b5;
+  font-family: 'Special Elite', cursive;
+  color: #1a2744;
+  transition: all 0.2s ease;
+}
+
+.vintage-input:focus {
+  border-color: #a08060;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(160, 128, 96, 0.2);
+}
+
+.vintage-input::placeholder {
+  color: #a08060;
+  opacity: 0.7;
+}
+
+/* Vintage button styling */
+.vintage-btn {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.vintage-btn-primary {
+  background-color: #1a2744;
+  color: #e6a919;
+  border: 2px solid #1a2744;
+}
+
+.vintage-btn-primary:hover {
+  background-color: #141d33;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 39, 68, 0.3);
+}
+
+.vintage-btn-secondary {
+  background-color: transparent;
+  color: #1a2744;
+  border: 2px solid #d4c9b5;
+}
+
+.vintage-btn-secondary:hover {
+  border-color: #a08060;
+  background-color: #f8f6f0;
+}
+
+/* Countdown timer styling */
+.countdown-display {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.countdown-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.countdown-segment .label {
+  font-size: 0.625rem;
+  color: #e6a919;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+  font-family: 'Source Sans 3', sans-serif;
+}
+
+/* Flight progress bar */
+.progress-track {
+  position: relative;
+  height: 4px;
+  background: #d4c9b5;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #1a2744 0%, #e6a919 100%);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.progress-plane {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.5s ease;
+}
+
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #fafaf9;
+  background: #ebe4d4;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d6d3d1;
-  border-radius: 3px;
+  background: #a08060;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: #8a6c4a;
 }
 
 /* Drag and drop styles */
 .dragging {
-  opacity: 0.4;
+  opacity: 0.5;
+  transform: rotate(2deg);
 }
 
 .drag-over {
-  border-top: 2px solid #f59e0b;
+  border-top: 3px dashed #a08060 !important;
+}
+
+/* Airline logo placeholder */
+.airline-badge {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.15em;
+}
+
+/* Decorative elements */
+.vintage-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #a08060;
+}
+
+.vintage-divider::before,
+.vintage-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d4c9b5, transparent);
+}
+
+/* Header departure board style */
+.board-header {
+  background: linear-gradient(180deg, #1a2744 0%, #0d1422 100%);
+  border-bottom: 4px solid #e6a919;
+}
+
+/* Form panel styling */
+.panel-vintage {
+  background-color: #f8f6f0;
+  border: 2px solid #d4c9b5;
+  border-top: none;
+}
+
+/* Animation for listening state */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(194, 59, 34, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(194, 59, 34, 0);
+  }
+}
+
+.listening-pulse {
+  animation: pulse-glow 1.5s infinite;
+}
+
+/* Empty state styling */
+.empty-state-icon {
+  background: linear-gradient(180deg, #ebe4d4 0%, #d4c9b5 100%);
+  border: 2px dashed #a08060;
 }
