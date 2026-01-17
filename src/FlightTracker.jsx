@@ -11,11 +11,209 @@ import {
   ChevronUp,
   Clock,
   MapPin,
-  AlertCircle
+  AlertCircle,
+  Calendar
 } from 'lucide-react';
 import { mockFlights } from './utils/mockData';
 import { fetchFlightData, parseFlightNumberFromVoice } from './utils/api';
 import useApiKey from './hooks/useApiKey';
+
+// Split-flap character display component
+function FlapChar({ char, large = false }) {
+  return (
+    <span className={`flap-char ${large ? 'flap-char-large' : 'text-sm'}`}>
+      {char}
+    </span>
+  );
+}
+
+// Split-flap time display
+function FlapTime({ time, large = false }) {
+  if (!time) return null;
+  const chars = time.split('');
+  return (
+    <div className="flap-group">
+      {chars.map((char, i) => (
+        <FlapChar key={i} char={char} large={large} />
+      ))}
+    </div>
+  );
+}
+
+// Split-flap gate display
+function FlapGate({ gate }) {
+  if (!gate) return <span className="text-paper-400 font-typewriter text-sm">---</span>;
+  const chars = gate.split('');
+  return (
+    <div className="flap-group">
+      {chars.map((char, i) => (
+        <FlapChar key={i} char={char} />
+      ))}
+    </div>
+  );
+}
+
+// Countdown timer component
+function CountdownTimer({ departureDate, departureTime }) {
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0, isNegative: false });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const [hours, minutes] = departureTime.split(':').map(Number);
+      const departure = new Date(departureDate);
+      departure.setHours(hours, minutes, 0, 0);
+
+      const diff = departure - now;
+      const isNegative = diff < 0;
+      const absDiff = Math.abs(diff);
+
+      return {
+        hours: Math.floor(absDiff / (1000 * 60 * 60)),
+        minutes: Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((absDiff % (1000 * 60)) / 1000),
+        isNegative
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
+    return () => clearInterval(timer);
+  }, [departureDate, departureTime]);
+
+  const padZero = (num) => String(num).padStart(2, '0');
+
+  if (timeLeft.isNegative) {
+    return (
+      <div className="text-center">
+        <span className="font-typewriter text-stamp-green text-sm">DEPARTED</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="countdown-display justify-center">
+      <div className="countdown-segment">
+        <div className="flap-group">
+          <FlapChar char={padZero(timeLeft.hours)[0]} />
+          <FlapChar char={padZero(timeLeft.hours)[1]} />
+        </div>
+        <span className="label">hrs</span>
+      </div>
+      <span className="flap-char text-sm">:</span>
+      <div className="countdown-segment">
+        <div className="flap-group">
+          <FlapChar char={padZero(timeLeft.minutes)[0]} />
+          <FlapChar char={padZero(timeLeft.minutes)[1]} />
+        </div>
+        <span className="label">min</span>
+      </div>
+      <span className="flap-char text-sm">:</span>
+      <div className="countdown-segment">
+        <div className="flap-group">
+          <FlapChar char={padZero(timeLeft.seconds)[0]} />
+          <FlapChar char={padZero(timeLeft.seconds)[1]} />
+        </div>
+        <span className="label">sec</span>
+      </div>
+    </div>
+  );
+}
+
+// Decorative barcode component
+function Barcode({ seed = 12345 }) {
+  // Generate pseudo-random widths based on seed
+  const widths = [];
+  let s = seed;
+  for (let i = 0; i < 40; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    widths.push((s % 3) + 1);
+  }
+
+  return (
+    <div className="barcode">
+      {widths.map((w, i) => (
+        <div key={i} className="barcode-line" style={{ width: `${w}px` }} />
+      ))}
+    </div>
+  );
+}
+
+// Status stamp component
+function StatusStamp({ status, delay }) {
+  const getStampClass = (status) => {
+    switch (status.toLowerCase()) {
+      case 'on time':
+        return 'stamp-ontime';
+      case 'boarding':
+        return 'stamp-boarding';
+      case 'delayed':
+        return 'stamp-delayed';
+      case 'cancelled':
+        return 'stamp-cancelled';
+      default:
+        return 'stamp-ontime';
+    }
+  };
+
+  return (
+    <div className={`stamp ${getStampClass(status)}`}>
+      {status}
+      {delay && <span className="ml-1">({delay})</span>}
+    </div>
+  );
+}
+
+// Flight progress indicator
+function FlightProgress({ departureDate, departureTime, arrivalTime, status }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const calculateProgress = () => {
+      if (status.toLowerCase() === 'cancelled') return 0;
+
+      const now = new Date();
+      const [depHours, depMinutes] = departureTime.split(':').map(Number);
+      const [arrHours, arrMinutes] = arrivalTime.split(':').map(Number);
+
+      const departure = new Date(departureDate);
+      departure.setHours(depHours, depMinutes, 0, 0);
+
+      const arrival = new Date(departureDate);
+      arrival.setHours(arrHours, arrMinutes, 0, 0);
+
+      // Handle overnight flights
+      if (arrival < departure) {
+        arrival.setDate(arrival.getDate() + 1);
+      }
+
+      if (now < departure) return 0;
+      if (now > arrival) return 100;
+
+      const total = arrival - departure;
+      const elapsed = now - departure;
+      return Math.round((elapsed / total) * 100);
+    };
+
+    setProgress(calculateProgress());
+    const timer = setInterval(() => setProgress(calculateProgress()), 60000);
+    return () => clearInterval(timer);
+  }, [departureDate, departureTime, arrivalTime, status]);
+
+  return (
+    <div className="relative mt-4 mb-2">
+      <div className="progress-track">
+        <div className="progress-fill" style={{ width: `${progress}%` }} />
+      </div>
+      <div
+        className="progress-plane text-ink-700"
+        style={{ left: `${progress}%` }}
+      >
+        <Plane className="w-4 h-4 transform rotate-0" />
+      </div>
+    </div>
+  );
+}
 
 function FlightTracker() {
   // API Key management with localStorage persistence
@@ -227,50 +425,35 @@ function FlightTracker() {
     setDraggedItem(null);
   };
 
-  // Get status color classes
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'on time':
-      case 'boarding':
-        return 'text-emerald-700 bg-emerald-50 border border-emerald-200';
-      case 'delayed':
-        return 'text-amber-700 bg-amber-50 border border-amber-200';
-      case 'cancelled':
-        return 'text-red-700 bg-red-50 border border-red-200';
-      default:
-        return 'text-stone-700 bg-stone-100 border border-stone-200';
-    }
-  };
-
-  // Get time color (compare actual vs scheduled)
-  const getTimeColor = (actual, scheduled) => {
-    if (!actual || !scheduled) return 'text-stone-900';
-    return actual !== scheduled ? 'text-amber-700' : 'text-emerald-700';
-  };
-
   return (
-    <div className="min-h-screen bg-stone-50 pb-20">
-      {/* Header */}
-      <header className="bg-white border-b border-stone-200 p-5 sticky top-0 z-10 shadow-sm backdrop-blur-sm bg-white/95">
+    <div className="min-h-screen bg-paper-200 pb-20">
+      {/* Vintage Terminal Header */}
+      <header className="board-header p-5 sticky top-0 z-20 shadow-lg">
         <div className="max-w-mobile mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Plane className="w-6 h-6 text-amber-600" />
-            <h1 className="text-xl font-semibold text-stone-900 tracking-tight">Flight Tracker</h1>
+            <div className="bg-amber-gold/20 p-2 rounded">
+              <Plane className="w-6 h-6 text-amber-gold" />
+            </div>
+            <div>
+              <h1 className="font-airline text-2xl text-amber-gold tracking-widest">DEPARTURES</h1>
+              <p className="text-paper-400 text-xs font-mono-flap tracking-wider">FLIGHT TRACKER</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="p-2 hover:bg-stone-100 rounded-lg transition-all text-stone-600 hover:text-stone-900"
+              className="p-2.5 hover:bg-white/10 rounded-lg transition-all text-paper-300 hover:text-amber-gold"
               aria-label="Settings"
             >
               <Settings className="w-5 h-5" />
             </button>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="p-2 bg-amber-500 hover:bg-amber-600 rounded-lg transition-all text-white shadow-sm"
+              className="vintage-btn vintage-btn-primary px-4 py-2 rounded-lg flex items-center gap-2"
               aria-label="Add flight"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Flight</span>
             </button>
           </div>
         </div>
@@ -278,13 +461,13 @@ function FlightTracker() {
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="bg-white border-b border-stone-200">
+        <div className="panel-vintage border-b-4 border-perf">
           <div className="max-w-mobile mx-auto p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-stone-900">Settings</h2>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-airline text-xl text-ink-700 tracking-wide">SETTINGS</h2>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors text-stone-500"
+                className="p-1.5 hover:bg-paper-300 rounded-lg transition-colors text-ink-700"
                 aria-label="Close settings"
               >
                 <X className="w-5 h-5" />
@@ -293,7 +476,7 @@ function FlightTracker() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="apiKey" className="block text-sm font-medium text-stone-700 mb-2">
+                <label htmlFor="apiKey" className="block font-typewriter text-sm text-ink-700 mb-2">
                   AviationStack API Key
                 </label>
                 <div className="flex gap-2">
@@ -302,13 +485,13 @@ function FlightTracker() {
                     id="apiKey"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Enter your API key"
-                    className="flex-1 px-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none bg-white"
+                    placeholder="Enter your API key..."
+                    className="vintage-input flex-1 px-4 py-3 rounded-lg"
                   />
                   {apiKey && (
                     <button
                       onClick={clearApiKey}
-                      className="px-4 py-2.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm border border-red-200"
+                      className="vintage-btn vintage-btn-secondary px-4 py-2 rounded-lg text-stamp-red border-stamp-red hover:bg-stamp-redBg"
                       aria-label="Clear API key"
                     >
                       Clear
@@ -317,10 +500,10 @@ function FlightTracker() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 text-sm bg-stone-50 px-4 py-3 rounded-lg border border-stone-200">
-                <div className={`w-2 h-2 rounded-full ${apiKey ? 'bg-emerald-500' : 'bg-stone-400'}`} />
-                <span className="text-stone-700 font-medium">
-                  {apiKey ? 'Using live data' : 'Using mock data'}
+              <div className="flex items-center gap-3 font-typewriter text-sm bg-paper-100 px-4 py-3 rounded-lg border-2 border-paper-300">
+                <div className={`w-3 h-3 rounded-full ${apiKey ? 'bg-stamp-green' : 'bg-paper-400'}`} />
+                <span className="text-ink-700">
+                  {apiKey ? 'Connected to live data' : 'Using demonstration data'}
                 </span>
               </div>
             </div>
@@ -330,17 +513,17 @@ function FlightTracker() {
 
       {/* Add Flight Form */}
       {showAddForm && (
-        <div className="bg-white border-b border-stone-200">
+        <div className="panel-vintage border-b-4 border-perf">
           <div className="max-w-mobile mx-auto p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-stone-900">Add Flight</h2>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-airline text-xl text-ink-700 tracking-wide">ADD FLIGHT</h2>
               <button
                 onClick={() => {
                   setShowAddForm(false);
                   setError('');
                   setVoiceTranscript('');
                 }}
-                className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors text-stone-500"
+                className="p-1.5 hover:bg-paper-300 rounded-lg transition-colors text-ink-700"
                 aria-label="Close form"
               >
                 <X className="w-5 h-5" />
@@ -348,15 +531,15 @@ function FlightTracker() {
             </div>
 
             {error && (
-              <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800 leading-relaxed">{error}</p>
+              <div className="mb-4 p-4 bg-stamp-redBg border-2 border-stamp-red rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-stamp-red flex-shrink-0 mt-0.5" />
+                <p className="font-typewriter text-sm text-stamp-red">{error}</p>
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="flightNumber" className="block text-sm font-medium text-stone-700 mb-2">
+                <label htmlFor="flightNumber" className="block font-typewriter text-sm text-ink-700 mb-2">
                   Flight Number
                 </label>
                 <div className="flex gap-2">
@@ -364,38 +547,40 @@ function FlightTracker() {
                     type="text"
                     id="flightNumber"
                     value={newFlight.flightNumber}
-                    onChange={(e) => setNewFlight({ ...newFlight, flightNumber: e.target.value })}
+                    onChange={(e) => setNewFlight({ ...newFlight, flightNumber: e.target.value.toUpperCase() })}
                     placeholder="e.g., KL692"
-                    className="flex-1 px-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none bg-white"
+                    className="vintage-input flex-1 px-4 py-3 rounded-lg uppercase"
                   />
                   <button
                     onClick={handleVoiceInput}
                     disabled={!recognitionRef.current}
-                    className={`p-2.5 rounded-lg transition-all shadow-sm ${
+                    className={`p-3 rounded-lg transition-all ${
                       isListening
-                        ? 'bg-red-500 text-white hover:bg-red-600'
-                        : 'bg-amber-500 text-white hover:bg-amber-600'
-                    } disabled:bg-stone-200 disabled:cursor-not-allowed disabled:text-stone-400`}
+                        ? 'bg-stamp-red text-white listening-pulse'
+                        : 'vintage-btn-primary'
+                    } disabled:bg-paper-300 disabled:cursor-not-allowed disabled:text-paper-400`}
                     aria-label="Voice input"
                   >
                     <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
                   </button>
                 </div>
                 {voiceTranscript && (
-                  <p className="mt-2 text-xs text-stone-600 bg-stone-50 px-3 py-2 rounded border border-stone-200">Heard: "{voiceTranscript}"</p>
+                  <p className="mt-2 font-typewriter text-xs text-ink-700 bg-paper-100 px-3 py-2 rounded border-2 border-paper-300">
+                    Heard: "{voiceTranscript}"
+                  </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="date" className="block text-sm font-medium text-stone-700 mb-2">
-                  Date
+                <label htmlFor="date" className="block font-typewriter text-sm text-ink-700 mb-2">
+                  Departure Date
                 </label>
                 <input
                   type="date"
                   id="date"
                   value={newFlight.date}
                   onChange={(e) => setNewFlight({ ...newFlight, date: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all outline-none bg-white"
+                  className="vintage-input w-full px-4 py-3 rounded-lg"
                 />
               </div>
 
@@ -403,9 +588,9 @@ function FlightTracker() {
                 <button
                   onClick={handleAddFlight}
                   disabled={isLoading}
-                  className="flex-1 bg-amber-500 text-white py-2.5 rounded-lg hover:bg-amber-600 transition-all disabled:bg-stone-200 disabled:cursor-not-allowed disabled:text-stone-400 font-medium shadow-sm"
+                  className="vintage-btn vintage-btn-primary flex-1 py-3 rounded-lg disabled:bg-paper-300 disabled:cursor-not-allowed disabled:text-paper-400 disabled:border-paper-300"
                 >
-                  {isLoading ? 'Adding...' : 'Add Flight'}
+                  {isLoading ? 'Adding...' : 'Add to Board'}
                 </button>
                 <button
                   onClick={() => {
@@ -414,7 +599,7 @@ function FlightTracker() {
                     setError('');
                     setVoiceTranscript('');
                   }}
-                  className="flex-1 bg-stone-100 text-stone-700 py-2.5 rounded-lg hover:bg-stone-200 transition-all font-medium border border-stone-200"
+                  className="vintage-btn vintage-btn-secondary flex-1 py-3 rounded-lg"
                 >
                   Cancel
                 </button>
@@ -425,14 +610,14 @@ function FlightTracker() {
       )}
 
       {/* Flight List */}
-      <div className="max-w-mobile mx-auto p-5 space-y-3">
+      <div className="max-w-mobile mx-auto p-5 space-y-4">
         {flights.length === 0 ? (
-          <div className="text-center py-16 text-stone-500">
-            <div className="bg-stone-100 w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center">
-              <Plane className="w-10 h-10 text-stone-400" />
+          <div className="text-center py-16">
+            <div className="empty-state-icon w-24 h-24 rounded-2xl mx-auto mb-5 flex items-center justify-center">
+              <Plane className="w-12 h-12 text-perf" />
             </div>
-            <p className="text-stone-900 font-medium text-lg mb-1">No flights added yet</p>
-            <p className="text-sm mt-2 text-stone-600">Tap the + button to add your first flight</p>
+            <p className="font-airline text-2xl text-ink-700 tracking-wide mb-2">NO FLIGHTS</p>
+            <p className="font-typewriter text-sm text-perf">Add your first flight to the board</p>
           </div>
         ) : (
           flights.map((flight, index) => (
@@ -443,215 +628,223 @@ function FlightTracker() {
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, index)}
-              className="bg-white rounded-xl border border-stone-200 overflow-hidden transition-all hover:shadow-lg hover:border-stone-300 shadow-sm"
+              className="paper-texture rounded-xl overflow-hidden shadow-ticket transition-all hover:shadow-lg border-2 border-paper-300"
             >
-              {/* Flight Card Header */}
+              {/* Boarding Pass Main Section */}
               <div
                 onClick={() => toggleFlightExpansion(flight.id)}
-                className="p-5 cursor-pointer select-none"
+                className="p-5 cursor-pointer select-none relative"
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 pt-1">
-                    <GripVertical className="w-5 h-5 text-stone-400 cursor-grab active:cursor-grabbing hover:text-stone-600" />
-                  </div>
+                {/* Grip Handle */}
+                <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                  <GripVertical className="w-4 h-4 text-paper-400 cursor-grab active:cursor-grabbing hover:text-perf" />
+                </div>
 
-                  <div className="flex-1 min-w-0">
-                    {/* Flight number and airline */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold text-lg text-stone-900 tracking-tight">{flight.flightNumber}</h3>
-                        <p className="text-sm text-stone-600 mt-0.5">{flight.airline}</p>
-                      </div>
+                {/* Header: Airline & Flight Number */}
+                <div className="flex items-start justify-between mb-4 pl-5">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="airline-badge text-2xl text-ink-700">{flight.flightNumber}</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteFlight(flight.id);
                         }}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors text-stone-400 hover:text-red-600"
+                        className="p-1.5 hover:bg-stamp-redBg rounded transition-colors text-paper-400 hover:text-stamp-red"
                         aria-label="Delete flight"
                       >
-                        <Trash2 className="w-4.5 h-4.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-
-                    {/* Date */}
-                    <div className="flex items-center gap-1.5 text-sm text-stone-600 mb-4 bg-stone-50 px-3 py-1.5 rounded-lg inline-flex border border-stone-200">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span className="font-medium">{new Date(flight.date).toLocaleDateString('en-US', {
+                    <p className="font-typewriter text-sm text-perf mt-1">{flight.airline}</p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-paper-200 px-3 py-1.5 rounded border border-paper-300">
+                    <Calendar className="w-3.5 h-3.5 text-perf" />
+                    <span className="font-mono-flap text-xs text-ink-700">
+                      {new Date(flight.date).toLocaleDateString('en-US', {
                         weekday: 'short',
-                        year: 'numeric',
                         month: 'short',
                         day: 'numeric'
-                      })}</span>
-                    </div>
+                      })}
+                    </span>
+                  </div>
+                </div>
 
-                    {/* Route visualization */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="flex-1 text-left">
-                        <p className="font-semibold text-stone-900 text-base">{flight.departure.city}</p>
-                        <p className="text-xs text-stone-500 mt-1">{flight.departure.airport}</p>
-                      </div>
-                      <div className="px-3">
-                        <Plane className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                      </div>
-                      <div className="flex-1 text-right">
-                        <p className="font-semibold text-stone-900 text-base">{flight.arrival.city}</p>
-                        <p className="text-xs text-stone-500 mt-1">{flight.arrival.airport}</p>
-                      </div>
-                    </div>
+                {/* Route */}
+                <div className="flex items-center gap-4 mb-4 pl-5">
+                  <div className="flex-1">
+                    <p className="font-airline text-xl text-ink-700 tracking-wide">{flight.departure.city}</p>
+                    <p className="font-mono-flap text-xs text-perf mt-0.5">{flight.departure.airport}</p>
+                  </div>
+                  <div className="flex flex-col items-center px-4">
+                    <Plane className="w-5 h-5 text-ink-700 mb-1" />
+                    <div className="w-16 h-px bg-paper-400" />
+                  </div>
+                  <div className="flex-1 text-right">
+                    <p className="font-airline text-xl text-ink-700 tracking-wide">{flight.arrival.city}</p>
+                    <p className="font-mono-flap text-xs text-perf mt-0.5">{flight.arrival.airport}</p>
+                  </div>
+                </div>
 
-                    {/* Times and gates */}
-                    <div className="flex justify-between text-sm mb-4 pb-4 border-b border-stone-100">
-                      <div>
-                        <p className="text-stone-500 text-xs uppercase tracking-wide mb-1.5">Departure</p>
-                        <p className={`font-semibold text-base ${getTimeColor(flight.departure.actualTime, flight.departure.time)}`}>
-                          {flight.departure.actualTime || flight.departure.time}
-                        </p>
-                        {flight.departure.gate && (
-                          <p className="text-stone-500 text-xs mt-1">Gate {flight.departure.gate}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-stone-500 text-xs uppercase tracking-wide mb-1.5">Arrival</p>
-                        <p className={`font-semibold text-base ${getTimeColor(flight.arrival.actualTime, flight.arrival.time)}`}>
-                          {flight.arrival.actualTime || flight.arrival.time}
-                        </p>
-                        {flight.arrival.gate && (
-                          <p className="text-stone-500 text-xs mt-1">Gate {flight.arrival.gate}</p>
-                        )}
-                      </div>
+                {/* Split-Flap Display Section */}
+                <div className="bg-flap-dark rounded-lg p-4 mb-4 ml-5">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <p className="text-paper-400 text-xs uppercase tracking-wider mb-2 font-body">Depart</p>
+                      <FlapTime time={flight.departure.actualTime || flight.departure.time} large />
                     </div>
+                    <div className="text-center">
+                      <p className="text-paper-400 text-xs uppercase tracking-wider mb-2 font-body">Gate</p>
+                      <FlapGate gate={flight.departure.gate} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-paper-400 text-xs uppercase tracking-wider mb-2 font-body">Arrive</p>
+                      <FlapTime time={flight.arrival.actualTime || flight.arrival.time} large />
+                    </div>
+                  </div>
 
-                    {/* Status badge */}
-                    <div className="flex items-center justify-between">
-                      <span className={`px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide ${getStatusColor(flight.status)}`}>
-                        {flight.status}
-                        {flight.delay && ` (${flight.delay})`}
-                      </span>
-                      {expandedFlightId === flight.id ? (
-                        <ChevronUp className="w-5 h-5 text-stone-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-stone-400" />
-                      )}
-                    </div>
+                  {/* Flight Progress */}
+                  <FlightProgress
+                    departureDate={flight.date}
+                    departureTime={flight.departure.time}
+                    arrivalTime={flight.arrival.time}
+                    status={flight.status}
+                  />
+                </div>
+
+                {/* Status and Countdown */}
+                <div className="flex items-center justify-between pl-5">
+                  <StatusStamp status={flight.status} delay={flight.delay} />
+
+                  <div className="flex items-center gap-2">
+                    {expandedFlightId === flight.id ? (
+                      <ChevronUp className="w-5 h-5 text-perf" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-perf" />
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Expanded Details */}
+              {/* Perforated Tear Line with Notches */}
+              <div className="ticket-notch perforation perforation-top h-0" />
+
+              {/* Expanded Details - Ticket Stub */}
               {expandedFlightId === flight.id && (
-                <div className="border-t border-stone-200 bg-stone-50 p-5">
+                <div className="bg-paper-100 p-5 border-t-0">
+                  {/* Countdown Timer */}
+                  <div className="bg-flap-dark rounded-lg p-4 mb-5">
+                    <p className="text-paper-400 text-xs uppercase tracking-wider mb-3 text-center font-body">Time to Departure</p>
+                    <CountdownTimer
+                      departureDate={flight.date}
+                      departureTime={flight.departure.time}
+                    />
+                  </div>
+
                   {/* Current Status */}
-                  <div className="mb-5">
-                    <h4 className="font-semibold text-stone-900 mb-3 text-sm uppercase tracking-wide">Current Status</h4>
-                    <p className={`inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide ${getStatusColor(flight.currentStatus)}`}>
-                      {flight.currentStatus}
-                    </p>
-                    {flight.reason && (
-                      <p className="text-sm text-stone-600 mt-3 leading-relaxed bg-white px-4 py-3 rounded-lg border border-stone-200">{flight.reason}</p>
-                    )}
-                  </div>
-
-                  {/* Departure Details */}
-                  <div className="mb-5 bg-white p-4 rounded-lg border border-stone-200">
-                    <h4 className="font-semibold text-stone-900 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
-                      <MapPin className="w-4 h-4 text-amber-600" />
-                      Departure Details
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      {flight.departure.terminal && (
-                        <div>
-                          <span className="text-stone-500 text-xs">Terminal</span>
-                          <p className="font-medium text-stone-900 mt-0.5">{flight.departure.terminal}</p>
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-stone-500 text-xs">Scheduled</span>
-                        <p className="font-medium text-stone-900 mt-0.5">{flight.departure.time}</p>
-                      </div>
-                      <div>
-                        <span className="text-stone-500 text-xs">Actual</span>
-                        <p className={`font-medium mt-0.5 ${getTimeColor(flight.departure.actualTime, flight.departure.time)}`}>
-                          {flight.departure.actualTime}
-                        </p>
-                      </div>
-                      {flight.departure.gate && (
-                        <div>
-                          <span className="text-stone-500 text-xs">Gate</span>
-                          <p className="font-medium text-stone-900 mt-0.5">{flight.departure.gate}</p>
-                        </div>
-                      )}
-                      {flight.departure.checkInCounter && (
-                        <div className="col-span-2">
-                          <span className="text-stone-500 text-xs">Check-in</span>
-                          <p className="font-medium text-stone-900 mt-0.5">{flight.departure.checkInCounter}</p>
-                        </div>
-                      )}
+                  {flight.reason && (
+                    <div className="mb-5">
+                      <h4 className="font-airline text-sm text-ink-700 tracking-wide mb-2">STATUS NOTE</h4>
+                      <p className="font-typewriter text-sm text-perf bg-paper-50 px-4 py-3 rounded-lg border-2 border-paper-300">
+                        {flight.reason}
+                      </p>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Arrival Details */}
-                  <div className="mb-5 bg-white p-4 rounded-lg border border-stone-200">
-                    <h4 className="font-semibold text-stone-900 mb-3 flex items-center gap-2 text-sm uppercase tracking-wide">
-                      <MapPin className="w-4 h-4 text-amber-600" />
-                      Arrival Details
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      {flight.arrival.terminal && (
-                        <div>
-                          <span className="text-stone-500 text-xs">Terminal</span>
-                          <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.terminal}</p>
+                  {/* Departure & Arrival Details */}
+                  <div className="grid grid-cols-2 gap-4 mb-5">
+                    <div className="bg-paper-50 p-4 rounded-lg border-2 border-paper-300">
+                      <h4 className="font-airline text-sm text-ink-700 tracking-wide mb-3 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-ink-700" />
+                        DEPARTURE
+                      </h4>
+                      <div className="space-y-2 font-typewriter text-sm">
+                        {flight.departure.terminal && (
+                          <div className="flex justify-between">
+                            <span className="text-perf">Terminal</span>
+                            <span className="text-ink-700">{flight.departure.terminal}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-perf">Scheduled</span>
+                          <span className="text-ink-700">{flight.departure.time}</span>
                         </div>
-                      )}
-                      <div>
-                        <span className="text-stone-500 text-xs">Scheduled</span>
-                        <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.time}</p>
+                        <div className="flex justify-between">
+                          <span className="text-perf">Actual</span>
+                          <span className={flight.departure.actualTime !== flight.departure.time ? 'text-stamp-red' : 'text-stamp-green'}>
+                            {flight.departure.actualTime}
+                          </span>
+                        </div>
+                        {flight.departure.checkInCounter && (
+                          <div className="flex justify-between">
+                            <span className="text-perf">Check-in</span>
+                            <span className="text-ink-700">{flight.departure.checkInCounter}</span>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <span className="text-stone-500 text-xs">Actual</span>
-                        <p className={`font-medium mt-0.5 ${getTimeColor(flight.arrival.actualTime, flight.arrival.time)}`}>
-                          {flight.arrival.actualTime}
-                        </p>
+                    </div>
+
+                    <div className="bg-paper-50 p-4 rounded-lg border-2 border-paper-300">
+                      <h4 className="font-airline text-sm text-ink-700 tracking-wide mb-3 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-ink-700" />
+                        ARRIVAL
+                      </h4>
+                      <div className="space-y-2 font-typewriter text-sm">
+                        {flight.arrival.terminal && (
+                          <div className="flex justify-between">
+                            <span className="text-perf">Terminal</span>
+                            <span className="text-ink-700">{flight.arrival.terminal}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-perf">Scheduled</span>
+                          <span className="text-ink-700">{flight.arrival.time}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-perf">Actual</span>
+                          <span className={flight.arrival.actualTime !== flight.arrival.time ? 'text-stamp-red' : 'text-stamp-green'}>
+                            {flight.arrival.actualTime}
+                          </span>
+                        </div>
+                        {flight.arrival.baggageClaim && (
+                          <div className="flex justify-between">
+                            <span className="text-perf">Baggage</span>
+                            <span className="text-ink-700">{flight.arrival.baggageClaim}</span>
+                          </div>
+                        )}
                       </div>
-                      {flight.arrival.gate && (
-                        <div>
-                          <span className="text-stone-500 text-xs">Gate</span>
-                          <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.gate}</p>
-                        </div>
-                      )}
-                      {flight.arrival.baggageClaim && (
-                        <div className="col-span-2">
-                          <span className="text-stone-500 text-xs">Baggage</span>
-                          <p className="font-medium text-stone-900 mt-0.5">{flight.arrival.baggageClaim}</p>
-                        </div>
-                      )}
                     </div>
                   </div>
 
                   {/* Aircraft */}
                   {flight.aircraft && (
-                    <div className="mb-5 bg-white p-4 rounded-lg border border-stone-200">
-                      <h4 className="font-semibold text-stone-900 mb-2 text-sm uppercase tracking-wide">Aircraft</h4>
-                      <p className="text-sm text-stone-600">{flight.aircraft}</p>
+                    <div className="mb-5">
+                      <h4 className="font-airline text-sm text-ink-700 tracking-wide mb-2">AIRCRAFT</h4>
+                      <p className="font-typewriter text-sm text-perf">{flight.aircraft}</p>
                     </div>
                   )}
 
                   {/* Gate Changes */}
                   {flight.gateChanges && flight.gateChanges.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-stone-900 mb-3 text-sm uppercase tracking-wide">Gate Changes</h4>
+                    <div className="mb-5">
+                      <h4 className="font-airline text-sm text-ink-700 tracking-wide mb-3">GATE CHANGES</h4>
                       <div className="space-y-2">
                         {flight.gateChanges.map((change, idx) => (
-                          <div key={idx} className="text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
-                            <span className="font-semibold text-amber-900">
-                              {change.from} → {change.to}
-                            </span>
-                            <span className="text-amber-700 ml-2">at {change.time}</span>
+                          <div key={idx} className="stamp stamp-delayed text-xs">
+                            {change.from} → {change.to} at {change.time}
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Decorative Barcode */}
+                  <div className="flex justify-center pt-4 border-t-2 border-dashed border-paper-300">
+                    <div className="text-center">
+                      <Barcode seed={flight.id} />
+                      <p className="font-mono-flap text-xs text-paper-400 mt-2">PASSENGER COPY</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
